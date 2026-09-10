@@ -125,16 +125,12 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 /* --------------------------- Hafenkarte (Verkauf) --------------------------- */
 .hafenkarte{position:relative;width:100%;aspect-ratio:16/8;background:#CFE6F2;
   border-radius:10px;overflow:hidden;border:1px solid var(--linieFein)}
-.land{position:absolute;background:#DCEEDC;border:1px solid #BFDDBF}
-/* Schematisch, aber in echter Lage: Amrum liegt seeseits im Südwesten,
-   Föhr in der Mitte, das Festland mit Dagebüll im Nordosten — genau wie
-   auf der richtigen Karte, nur vereinfacht gezeichnet. Ein echtes
-   Kartenbild einzubetten würde Netzzugriff beim Laden brauchen (oder
-   Bildrechte kosten); diese Datei bleibt bewusst eine einzige Seite ohne
-   Nachladen. */
-.land-festland{left:74%;top:-10%;width:40%;height:66%;border-radius:35% 65% 55% 45%/30% 45% 55% 70%}
-.land-foehr{left:36%;top:6%;width:38%;height:56%;border-radius:55% 45% 50% 50%/50% 55% 45% 50%}
-.land-amrum{left:-6%;top:38%;width:26%;height:68%;border-radius:60% 40% 55% 45%/25% 25% 75% 75%}
+/* Umrisse von Föhr, Amrum und dem Festland bei Dagebüll, von Hand nach
+   einem Kartenausschnitt nachgezeichnet — Lage und Form stimmen in etwa,
+   ohne ein echtes Kartenbild einzubetten. Das würde Netzzugriff beim
+   Laden brauchen oder Bildrechte kosten; diese Datei bleibt bewusst eine
+   einzige Seite ohne Nachladen. */
+.landform{fill:#DCEEDC;stroke:#BFDDBF;stroke-width:.4;vector-effect:non-scaling-stroke}
 .routenlinie{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .hafen{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;
   align-items:center;gap:2px;background:none;border:0;cursor:pointer;color:var(--tinte);padding:2px}
@@ -200,15 +196,17 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
         <div class="inhalt zeile-breit">
           <div class="hafenkarte-spalte">
             <div id="hafenkarte" class="hafenkarte">
-              <div class="land land-amrum"></div>
-              <div class="land land-foehr"></div>
-              <div class="land land-festland"></div>
+              <svg class="routenlinie" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M13,49 L18,53 L17,68 L20,88 L25,98 L14,90 L4,72 L4,58 L9,50 Z" class="landform"/>
+                <path d="M42,9 L60,11 L71,28 L68,43 L60,52 L43,50 L28,45 L21,33 L32,13 Z" class="landform"/>
+                <path d="M85,0 L100,0 L100,33 L92,27 L87,15 L85,3 Z" class="landform"/>
+              </svg>
               <svg id="routenLinie" class="routenlinie" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-              <button type="button" class="hafen" data-hafen="T" style="left:11%;top:82%">
+              <button type="button" class="hafen" data-hafen="T" style="left:22%;top:90%">
                 <span class="anker">⚓</span><span class="bez">Wittdün (Amrum)</span></button>
-              <button type="button" class="hafen" data-hafen="W" style="left:58%;top:40%">
+              <button type="button" class="hafen" data-hafen="W" style="left:60%;top:47%">
                 <span class="anker">⚓</span><span class="bez">Wyk (Föhr)</span></button>
-              <button type="button" class="hafen" data-hafen="D" style="left:92%;top:15%">
+              <button type="button" class="hafen" data-hafen="D" style="left:91%;top:18%">
                 <span class="anker">⚓</span><span class="bez">Dagebüll</span></button>
             </div>
             <div id="routenText" class="muted" style="margin-top:6px;font-size:13px"></div>
@@ -894,7 +892,7 @@ var SYMBOL={
   lkw:'<svg viewBox="0 0 36 20"><rect x="2" y="3.5" width="18" height="10.5" fill="currentColor"/><path d="M20 8 L28 8 L33 12.5 L33 14 L20 14 Z" fill="currentColor"/><circle cx="8" cy="16.5" r="2.7" fill="#fff"/><circle cx="27.5" cy="16.5" r="2.7" fill="#fff"/></svg>',
 };
 
-var HAFEN_POS={ D:{x:92,y:15}, W:{x:58,y:40}, T:{x:11,y:82} };
+var HAFEN_POS={ D:{x:91,y:18}, W:{x:60,y:47}, T:{x:22,y:90} };
 var kartenVon=null;
 
 function kachelInhalt(symbol, label, anzahl, wenigerFeld){
