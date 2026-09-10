@@ -97,13 +97,13 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 .mengenfeld .zahl{width:30px;text-align:center;font-variant-numeric:tabular-nums}
 
 /* ------------------------------- Kacheln ------------------------------- */
-.kachelraster{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--kachelbreite,140px),1fr));gap:8px}
+.kachelraster{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--kachelbreite,110px),1fr));gap:8px}
 .kachel{position:relative;border:0;border-radius:var(--radius);cursor:pointer;
-  min-height:var(--kachelbreite,140px);height:auto;padding:10px;
-  display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;
-  text-align:left;box-shadow:0 1px 2px rgba(11,36,54,.12)}
+  min-height:var(--kachelbreite,110px);height:auto;padding:10px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;
+  text-align:center;box-shadow:0 1px 2px rgba(11,36,54,.12)}
+.kachel svg{display:block;width:44%;height:auto;max-width:56px}
 .kachel .bez{font-size:13px;font-weight:600;line-height:1.25}
-.kachel .klein{font-size:11px;opacity:.85;margin-top:2px}
 .kachel .zahl{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.28);color:#fff;
   border-radius:10px;min-width:20px;height:20px;padding:0 6px;font-size:12px;font-weight:700;
   display:flex;align-items:center;justify-content:center}
@@ -111,6 +111,22 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
   background:rgba(0,0,0,.28);color:#fff;display:flex;align-items:center;justify-content:center;
   font-size:15px;line-height:1}
 .kachel.aktiv{outline:3px solid var(--tinte);outline-offset:2px}
+
+/* --------------------------- Hafenkarte (Verkauf) --------------------------- */
+.hafenkarte{position:relative;width:100%;aspect-ratio:16/10;background:#CFE6F2;
+  border-radius:10px;overflow:hidden;border:1px solid var(--linieFein)}
+.land{position:absolute;background:#DCEEDC;border:1px solid #BFDDBF}
+.land-festland{left:-4%;top:12%;width:36%;height:64%;border-radius:30% 70% 60% 40%/40% 50% 50% 60%}
+.land-foehr{left:42%;top:0%;width:46%;height:50%;border-radius:60% 40% 50% 50%/50% 60% 40% 50%}
+.land-amrum{left:46%;top:54%;width:48%;height:46%;border-radius:45% 55% 40% 60%/55% 45% 60% 40%}
+.routenlinie{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hafen{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;
+  align-items:center;gap:2px;background:none;border:0;cursor:pointer;color:var(--tinte);padding:2px}
+.hafen .anker{font-size:24px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.hafen .bez{font-size:11px;font-weight:700;background:rgba(255,255,255,.9);padding:1px 7px;
+  border-radius:9px;white-space:nowrap}
+.hafen.gewaehlt .anker{color:var(--see)}
+.hafen.gewaehlt .bez{background:var(--see);color:#fff}
 
 /* ----------------------- Bordkontrolle: großes Urteil ----------------------- */
 #befund{border-radius:var(--radius);padding:22px;margin-bottom:14px;min-height:120px;
@@ -166,13 +182,21 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
       <div class="karte">
         <div class="kopf"><h3>Strecke</h3></div>
         <div class="inhalt">
-          <div id="routenKacheln" class="kachelraster"></div>
-          <label class="feld" style="max-width:260px;margin-top:12px"><span>Fahrttyp</span>
-            <select id="vFahrttyp">
-              <option value="einfach">Einfache Fahrt</option>
-              <option value="hinrueck">Hin- und Rückfahrt</option>
-            </select>
-          </label>
+          <div id="hafenkarte" class="hafenkarte">
+            <div class="land land-festland"></div>
+            <div class="land land-foehr"></div>
+            <div class="land land-amrum"></div>
+            <svg id="routenLinie" class="routenlinie" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+            <button type="button" class="hafen" data-hafen="D" style="left:15%;top:50%">
+              <span class="anker">⚓</span><span class="bez">Dagebüll</span></button>
+            <button type="button" class="hafen" data-hafen="W" style="left:65%;top:23%">
+              <span class="anker">⚓</span><span class="bez">Wyk (Föhr)</span></button>
+            <button type="button" class="hafen" data-hafen="T" style="left:70%;top:78%">
+              <span class="anker">⚓</span><span class="bez">Wittdün (Amrum)</span></button>
+          </div>
+          <div id="routenText" class="muted" style="margin-top:8px;font-size:13px"></div>
+
+          <div id="fahrttypKacheln" class="kachelraster" style="grid-template-columns:repeat(2,minmax(110px,140px));margin-top:12px"></div>
         </div>
       </div>
 
@@ -185,51 +209,20 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 
       <div class="karte">
         <div class="kopf"><h3>Zusatzkarten</h3></div>
-        <div class="inhalt raster r3">
-          <label class="feld"><span>Fahrrad</span>
-            <div class="mengenfeld" data-feld="fahrraeder">
-              <button type="button" class="rund" data-delta="-1">−</button>
-              <span class="zahl">0</span>
-              <button type="button" class="rund" data-delta="1">+</button>
-            </div>
-          </label>
-          <label class="feld"><span>Hund</span>
-            <div class="mengenfeld" data-feld="hunde">
-              <button type="button" class="rund" data-delta="-1">−</button>
-              <span class="zahl">0</span>
-              <button type="button" class="rund" data-delta="1">+</button>
-            </div>
-          </label>
-          <label class="feld"><span>Bollerwagen</span>
-            <div class="mengenfeld" data-feld="bollerwagen">
-              <button type="button" class="rund" data-delta="-1">−</button>
-              <span class="zahl">0</span>
-              <button type="button" class="rund" data-delta="1">+</button>
-            </div>
-          </label>
+        <div class="inhalt">
+          <div id="zusatzKacheln" class="kachelraster"></div>
         </div>
       </div>
 
       <div class="karte">
-        <div class="kopf"><h3>Fahrzeuge</h3>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button type="button" class="klein" id="btnPkwHinzu">+ Pkw</button>
-            <label class="feld" style="margin:0"><span style="display:none">Lkw</span>
-              <div class="mengenfeld" data-feld="lkw">
-                <button type="button" class="rund klein" data-delta="-1">−</button>
-                <span class="zahl">0</span>
-                <button type="button" class="rund klein" data-delta="1">+</button>
-              </div>
-            </label>
-          </div>
-        </div>
+        <div class="kopf"><h3>Fahrzeuge</h3></div>
         <div class="inhalt">
-          <table id="tabPkw">
+          <div id="fahrzeugKacheln" class="kachelraster"></div>
+          <table id="tabPkw" style="margin-top:12px">
             <thead><tr><th>Pkw</th><th class="re" style="width:140px">Länge in Metern</th><th style="width:40px"></th></tr></thead>
             <tbody></tbody>
           </table>
           <div id="pkwLeer" class="leer">Kein Pkw im Warenkorb.</div>
-          <p class="muted" style="font-size:12px;margin:8px 0 0">Lkw-Anzahl steht in der Kopfzeile dieser Karte.</p>
         </div>
       </div>
     </div>
@@ -843,6 +836,7 @@ var korb={ verbindung:"WD", fahrttyp:"einfach", erwachsene:1, kinder:0,
 var pkwZaehler=0;
 
 function warenkorbPreis(){
+  if(!korb.verbindung) return {posten:[], summe:0};
   var basis=basisStrecke(korb.verbindung);
   var s=db.preise.strecken[basis];
   var posten=[];
@@ -870,32 +864,78 @@ function korbLeer(){
          korb.hunde===0 && korb.bollerwagen===0 && korb.pkw.length===0 && korb.lkw===0;
 }
 
-function zeichneRoutenKacheln(){
-  var box=$("routenKacheln"); box.innerHTML="";
-  VERBINDUNGEN.forEach(function(v){
-    var k=db.preise.kacheln.routen[v.code] || {farbe:"#0E6BA8"};
+/* ------------------------------ Bildzeichen ------------------------------
+   Einfache, immer gleich gezeichnete Symbole statt Text — auf einem
+   Fährkassenbildschirm im Wind und in Eile schneller zu treffen als eine
+   Auswahlliste, und ohne Sprachkenntnis verständlich. */
+var SYMBOL={
+  personGross:'<svg viewBox="0 0 24 24"><circle cx="12" cy="5.4" r="3.4" fill="currentColor"/><path d="M6 21 L7.3 12 Q12 9 16.7 12 L18 21 Z" fill="currentColor"/></svg>',
+  personKlein:'<svg viewBox="0 0 24 24"><circle cx="12" cy="7.4" r="4.2" fill="currentColor"/><path d="M8.2 21 L9 15 Q12 13.2 15 15 L15.8 21 Z" fill="currentColor"/></svg>',
+  pfeilEinfach:'<svg viewBox="0 0 32 20"><path d="M2 10 H26 M19 3 L27 10 L19 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  pfeilHinRueck:'<svg viewBox="0 0 32 20"><path d="M4 6 H24 M17 1 L25 6 L17 11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 14 H8 M15 19 L7 14 L15 9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fahrrad:'<svg viewBox="0 0 32 22"><circle cx="7" cy="16" r="4.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="25" cy="16" r="4.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M7 16 L14 6 L21 6 L25 16 M14 6 L17 16 M21 6 L18.5 3" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  hund:'<svg viewBox="0 0 24 24"><path d="M7 5 Q4 5 4 9 Q4 11.5 6 12.5 L6 16 Q6 19 9 19 L15 19 Q18 19 18 16 L18 12.5 Q20 11.5 20 9 Q20 5 17 5 L15.5 8 Q13.5 7.2 12 7.2 Q10.5 7.2 8.5 8 Z" fill="currentColor"/><circle cx="9.6" cy="12" r="1.1" fill="var(--flaeche)"/><circle cx="14.4" cy="12" r="1.1" fill="var(--flaeche)"/><ellipse cx="12" cy="15" rx="1.6" ry="1.1" fill="var(--flaeche)"/></svg>',
+  bollerwagen:'<svg viewBox="0 0 32 22"><rect x="7" y="4" width="17" height="9" rx="1.4" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="11" cy="18" r="3" fill="currentColor"/><circle cx="20" cy="18" r="3" fill="currentColor"/><path d="M7 8 L1 4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  pkw:'<svg viewBox="0 0 36 20"><path d="M3 14 L5.5 7.5 Q8.5 4.5 14 4.5 L22 4.5 Q27.5 4.5 30.5 7.5 L33 14 Z" fill="currentColor"/><circle cx="10" cy="15.5" r="3.1" fill="#fff"/><circle cx="26" cy="15.5" r="3.1" fill="#fff"/></svg>',
+  lkw:'<svg viewBox="0 0 36 20"><rect x="2" y="3.5" width="18" height="10.5" fill="currentColor"/><path d="M20 8 L28 8 L33 12.5 L33 14 L20 14 Z" fill="currentColor"/><circle cx="8" cy="16.5" r="2.7" fill="#fff"/><circle cx="27.5" cy="16.5" r="2.7" fill="#fff"/></svg>',
+};
+
+var HAFEN_POS={ D:{x:15,y:50}, W:{x:65,y:23}, T:{x:70,y:78} };
+var kartenVon=null;
+
+function kachelInhalt(symbol, label, anzahl, wenigerFeld){
+  return symbol+'<span class="bez">'+esc(label)+'</span>'+
+    (anzahl ? '<span class="zahl">'+anzahl+'</span>'+
+              (wenigerFeld?'<span class="weniger" data-weniger="'+wenigerFeld+'">−</span>':'') : '');
+}
+function kachelFarbeSetzen(btn, farbe){
+  btn.style.background=farbe; btn.style.color=schriftAuf(farbe);
+  btn.style.border = helligkeit(farbe)>0.5 ? "1px solid rgba(11,36,54,.18)" : "0";
+}
+
+function zeichneHafenkarte(){
+  document.querySelectorAll("#hafenkarte .hafen").forEach(function(b){
+    var h=b.getAttribute("data-hafen");
+    var teilVonRoute = korb.verbindung && (korb.verbindung[0]===h || korb.verbindung[1]===h);
+    b.classList.toggle("gewaehlt", h===kartenVon || teilVonRoute);
+  });
+  var svg=$("routenLinie");
+  if(korb.verbindung){
+    var v=verbindung(korb.verbindung), p1=HAFEN_POS[v.von], p2=HAFEN_POS[v.nach];
+    var farbe=(db.preise.kacheln.routen[korb.verbindung]||{}).farbe||"#0E6BA8";
+    svg.innerHTML='<defs><marker id="pfeilspitze" markerWidth="6" markerHeight="6" refX="4.5" refY="2.5" orient="auto">'+
+      '<path d="M0,0 L5,2.5 L0,5 z" fill="'+farbe+'"/></marker></defs>'+
+      '<line x1="'+p1.x+'" y1="'+p1.y+'" x2="'+p2.x+'" y2="'+p2.y+'" stroke="'+farbe+
+      '" stroke-width="1" marker-end="url(#pfeilspitze)"/>';
+    $("routenText").textContent=HAFEN_NAME[v.von]+" → "+HAFEN_NAME[v.nach];
+  } else {
+    svg.innerHTML="";
+    $("routenText").textContent=kartenVon
+      ? "Von "+HAFEN_NAME[kartenVon]+" — jetzt den Zielhafen antippen."
+      : "Starthafen antippen, dann den Zielhafen.";
+  }
+}
+
+function zeichneFahrttypKacheln(){
+  var box=$("fahrttypKacheln"); box.innerHTML="";
+  [["einfach","pfeilEinfach","Einfache Fahrt"],["hinrueck","pfeilHinRueck","Hin- und Rückfahrt"]].forEach(function(o){
     var b=document.createElement("button");
-    b.type="button"; b.className="kachel"+(korb.verbindung===v.code?" aktiv":"");
-    b.style.background=k.farbe; b.style.color=schriftAuf(k.farbe);
-    b.style.border = helligkeit(k.farbe)>0.5 ? "1px solid rgba(11,36,54,.18)" : "0";
-    b.innerHTML='<span class="bez">'+esc(HAFEN_NAME[v.von])+' → '+esc(HAFEN_NAME[v.nach])+'</span>';
-    b.addEventListener("click",function(){ korb.verbindung=v.code; zeichneVerkauf(); });
+    b.type="button"; b.className="kachel"+(korb.fahrttyp===o[0]?" aktiv":"");
+    b.style.background="var(--flaeche)"; b.style.color="var(--tinte)"; b.style.border="1px solid var(--linie)";
+    b.innerHTML=SYMBOL[o[1]]+'<span class="bez">'+o[2]+'</span>';
+    b.addEventListener("click",function(){ korb.fahrttyp=o[0]; zeichneVerkauf(); });
     box.appendChild(b);
   });
 }
 
 function zeichneGastKacheln(){
   var box=$("gastKacheln"); box.innerHTML="";
-  [["erwachsene","Erwachsene"],["kinder","Kinder"]].forEach(function(paar){
-    var feld=paar[0], label=paar[1];
-    var k=db.preise.kacheln.gaeste[feld] || {farbe:"#0E6BA8"};
-    var q=korb[feld]||0;
+  [["erwachsene","personGross","Erwachsene"],["kinder","personKlein","Kinder"]].forEach(function(o){
+    var feld=o[0], k=db.preise.kacheln.gaeste[feld]||{farbe:"#0E6BA8"}, q=korb[feld]||0;
     var b=document.createElement("button");
     b.type="button"; b.className="kachel";
-    b.style.background=k.farbe; b.style.color=schriftAuf(k.farbe);
-    b.style.border = helligkeit(k.farbe)>0.5 ? "1px solid rgba(11,36,54,.18)" : "0";
-    b.innerHTML='<span class="bez">'+esc(label)+'</span>'+
-      (q ? '<span class="zahl">'+q+'</span><span class="weniger" data-weniger="'+feld+'">−</span>' : '');
+    kachelFarbeSetzen(b, k.farbe);
+    b.innerHTML=kachelInhalt(SYMBOL[o[1]], o[2], q, feld);
     b.addEventListener("click",function(e){
       var w=e.target.getAttribute && e.target.getAttribute("data-weniger");
       if(w) korb[w]=Math.max(0,korb[w]-1);
@@ -906,6 +946,51 @@ function zeichneGastKacheln(){
   });
 }
 
+function zeichneZusatzKacheln(){
+  var box=$("zusatzKacheln"); box.innerHTML="";
+  [["fahrraeder","fahrrad","Fahrrad"],["hunde","hund","Hund"],["bollerwagen","bollerwagen","Bollerwagen"]].forEach(function(o){
+    var feld=o[0], q=korb[feld]||0;
+    var b=document.createElement("button");
+    b.type="button"; b.className="kachel";
+    b.style.background="var(--flaeche)"; b.style.color="var(--tinte)"; b.style.border="1px solid var(--linie)";
+    b.innerHTML=kachelInhalt(SYMBOL[o[1]], o[2], q, feld);
+    b.addEventListener("click",function(e){
+      var w=e.target.getAttribute && e.target.getAttribute("data-weniger");
+      if(w) korb[w]=Math.max(0,korb[w]-1);
+      else korb[feld]=Math.min(20,korb[feld]+1);
+      zeichneVerkauf();
+    });
+    box.appendChild(b);
+  });
+}
+
+function zeichneFahrzeugKacheln(){
+  var box=$("fahrzeugKacheln"); box.innerHTML="";
+
+  var pkwBtn=document.createElement("button");
+  pkwBtn.type="button"; pkwBtn.className="kachel";
+  pkwBtn.style.background="var(--flaeche)"; pkwBtn.style.color="var(--tinte)"; pkwBtn.style.border="1px solid var(--linie)";
+  pkwBtn.innerHTML=kachelInhalt(SYMBOL.pkw, "Pkw", korb.pkw.length, null);
+  pkwBtn.addEventListener("click",function(){
+    pkwZaehler++;
+    korb.pkw.push({id:pkwZaehler, laenge:4});
+    zeichneVerkauf();
+  });
+  box.appendChild(pkwBtn);
+
+  var lkwBtn=document.createElement("button");
+  lkwBtn.type="button"; lkwBtn.className="kachel";
+  lkwBtn.style.background="var(--flaeche)"; lkwBtn.style.color="var(--tinte)"; lkwBtn.style.border="1px solid var(--linie)";
+  lkwBtn.innerHTML=kachelInhalt(SYMBOL.lkw, "Lkw", korb.lkw, "lkw");
+  lkwBtn.addEventListener("click",function(e){
+    var w=e.target.getAttribute && e.target.getAttribute("data-weniger");
+    if(w) korb.lkw=Math.max(0,korb.lkw-1);
+    else korb.lkw=Math.min(20,korb.lkw+1);
+    zeichneVerkauf();
+  });
+  box.appendChild(lkwBtn);
+}
+
 function anwendenKachelgroesse(){
   var g=db.preise.kacheln.groesse;
   if(g==="auto") document.documentElement.style.removeProperty("--kachelbreite");
@@ -914,8 +999,11 @@ function anwendenKachelgroesse(){
 
 function zeichneVerkauf(){
   anwendenKachelgroesse();
-  zeichneRoutenKacheln();
+  zeichneHafenkarte();
+  zeichneFahrttypKacheln();
   zeichneGastKacheln();
+  zeichneZusatzKacheln();
+  zeichneFahrzeugKacheln();
   $("vSumme").textContent=eur(warenkorbPreis().summe);
   var r=warenkorbPreis();
   var tb=$("tabWarenkorb").querySelector("tbody");
@@ -931,11 +1019,6 @@ function zeichneVerkauf(){
       "<td><button type='button' class='rund klein' data-pkwloeschen='"+p.id+"'>✕</button></td></tr>";
   }).join("");
   $("pkwLeer").classList.toggle("hide", korb.pkw.length>0);
-
-  ["fahrraeder","hunde","bollerwagen","lkw"].forEach(function(f){
-    var el=document.querySelector('.mengenfeld[data-feld="'+f+'"] .zahl');
-    if(el) el.textContent=korb[f];
-  });
 
   var heute=heuteIso();
   var liste=db.tickets.filter(function(t){ return t.datum===heute && !t.storniert; });
@@ -964,6 +1047,7 @@ function naechsteTicketNummer(){
 }
 
 function verkaufen(){
+  if(!korb.verbindung){ melden("Bitte erst Start- und Zielhafen auf der Karte antippen.","fehler"); return; }
   if(korbLeer()){ melden("Der Warenkorb ist leer.","fehler"); return; }
   var r=warenkorbPreis();
   var nummer=naechsteTicketNummer();
@@ -984,7 +1068,6 @@ function verkaufen(){
   drucken(t);
   korb={ verbindung:korb.verbindung, fahrttyp:"einfach", erwachsene:1, kinder:0,
          fahrraeder:0, hunde:0, bollerwagen:0, pkw:[], lkw:0 };
-  $("vFahrttyp").value="einfach";
   zeichneVerkauf();
   zeichneFahrkarten();
 }
@@ -1277,22 +1360,19 @@ function start(){
     b.addEventListener("click",function(){ reiterZeigen(b.getAttribute("data-reiter")); });
   });
 
-  $("vFahrttyp").addEventListener("change",function(){ korb.fahrttyp=this.value; zeichneVerkauf(); });
-
-  document.querySelectorAll('.mengenfeld[data-feld] button[data-delta]').forEach(function(btn){
+  document.querySelectorAll("#hafenkarte .hafen").forEach(function(btn){
     btn.addEventListener("click",function(){
-      var feld=btn.closest(".mengenfeld").getAttribute("data-feld");
-      var delta=Number(btn.getAttribute("data-delta"));
-      korb[feld]=Math.max(0, Math.min(20, korb[feld]+delta));
+      var h=btn.getAttribute("data-hafen");
+      if(!kartenVon){ kartenVon=h; korb.verbindung=null; }
+      else if(kartenVon===h){ kartenVon=null; }
+      else {
+        var code=verbindung(kartenVon+h) ? kartenVon+h : h+kartenVon;
+        korb.verbindung=code; kartenVon=null;
+      }
       zeichneVerkauf();
     });
   });
 
-  $("btnPkwHinzu").addEventListener("click",function(){
-    pkwZaehler++;
-    korb.pkw.push({id:pkwZaehler, laenge:4});
-    zeichneVerkauf();
-  });
   $("tabPkw").addEventListener("input",function(e){
     var id=e.target.getAttribute("data-pkwlaenge");
     if(!id) return;
