@@ -96,6 +96,22 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 .mengenfeld{display:flex;align-items:center;gap:4px}
 .mengenfeld .zahl{width:30px;text-align:center;font-variant-numeric:tabular-nums}
 
+/* ------------------------------- Kacheln ------------------------------- */
+.kachelraster{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--kachelbreite,140px),1fr));gap:8px}
+.kachel{position:relative;border:0;border-radius:var(--radius);cursor:pointer;
+  min-height:var(--kachelbreite,140px);height:auto;padding:10px;
+  display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;
+  text-align:left;box-shadow:0 1px 2px rgba(11,36,54,.12)}
+.kachel .bez{font-size:13px;font-weight:600;line-height:1.25}
+.kachel .klein{font-size:11px;opacity:.85;margin-top:2px}
+.kachel .zahl{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.28);color:#fff;
+  border-radius:10px;min-width:20px;height:20px;padding:0 6px;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.kachel .weniger{position:absolute;bottom:6px;right:6px;width:22px;height:22px;border-radius:50%;
+  background:rgba(0,0,0,.28);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:15px;line-height:1}
+.kachel.aktiv{outline:3px solid var(--tinte);outline-offset:2px}
+
 /* ----------------------- Bordkontrolle: großes Urteil ----------------------- */
 #befund{border-radius:var(--radius);padding:22px;margin-bottom:14px;min-height:120px;
   display:flex;align-items:center;justify-content:center;text-align:center;
@@ -150,37 +166,20 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
       <div class="karte">
         <div class="kopf"><h3>Strecke</h3></div>
         <div class="inhalt">
-          <div class="raster r2">
-            <label class="feld"><span>Verbindung</span>
-              <select id="vVerbindung"></select>
-            </label>
-            <label class="feld"><span>Fahrttyp</span>
-              <select id="vFahrttyp">
-                <option value="einfach">Einfache Fahrt</option>
-                <option value="hinrueck">Hin- und Rückfahrt</option>
-              </select>
-            </label>
-          </div>
+          <div id="routenKacheln" class="kachelraster"></div>
+          <label class="feld" style="max-width:260px;margin-top:12px"><span>Fahrttyp</span>
+            <select id="vFahrttyp">
+              <option value="einfach">Einfache Fahrt</option>
+              <option value="hinrueck">Hin- und Rückfahrt</option>
+            </select>
+          </label>
         </div>
       </div>
 
       <div class="karte">
         <div class="kopf"><h3>Personen</h3></div>
-        <div class="inhalt raster r2">
-          <label class="feld"><span>Erwachsene</span>
-            <div class="mengenfeld" data-feld="erwachsene">
-              <button type="button" class="rund" data-delta="-1">−</button>
-              <span class="zahl">1</span>
-              <button type="button" class="rund" data-delta="1">+</button>
-            </div>
-          </label>
-          <label class="feld"><span>Kinder</span>
-            <div class="mengenfeld" data-feld="kinder">
-              <button type="button" class="rund" data-delta="-1">−</button>
-              <span class="zahl">0</span>
-              <button type="button" class="rund" data-delta="1">+</button>
-            </div>
-          </label>
+        <div class="inhalt">
+          <div id="gastKacheln" class="kachelraster"></div>
         </div>
       </div>
 
@@ -367,6 +366,31 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
     <div class="inhalt">
       <label class="feld" style="max-width:200px"><span>Preis je Fahrt</span>
         <input id="eLkw" type="number" step="0.5" min="0"></label>
+    </div>
+  </div>
+
+  <div class="karte">
+    <div class="kopf"><h3>Kacheln im Verkauf</h3></div>
+    <div class="inhalt">
+      <label class="feld" style="max-width:220px;margin-bottom:14px"><span>Kachelgröße</span>
+        <select id="eKachelGroesse">
+          <option value="auto">Automatisch</option>
+          <option value="110">Klein (110 px)</option>
+          <option value="140">Mittel (140 px)</option>
+          <option value="180">Groß (180 px)</option>
+          <option value="240">Sehr groß (240 px)</option>
+        </select>
+      </label>
+      <div class="raster r2">
+        <div>
+          <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinteWeich);margin:0 0 8px">Routen</h4>
+          <div id="eRoutenFarben" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <div>
+          <h4 style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinteWeich);margin:0 0 8px">Gäste</h4>
+          <div id="eGastFarben" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -700,6 +724,33 @@ function gegenrichtung(code){ return code[1]+code[0]; }
 function basisStrecke(code){ var a=code[0],b=code[1]; return a<b?a+b:b+a; }
 var BASISSTRECKEN=["DT","DW","TW"];
 
+/* Erdige, gut unterscheidbare Farben in Blau-/Grüntönen — dieselbe Idee wie
+   im Ticketmanager (dort Grün/Messing/Ziegel), hier in Reederei-Blau. */
+var KACHELFARBEN=["#0E6BA8","#1E7A4C","#5B8AA6","#C24914","#0B2436","#9FB8C8","#B23A2E","#E1EEF5"];
+
+function defaultKacheln(){
+  var routen={}, i=0;
+  VERBINDUNGEN.forEach(function(v){ routen[v.code]={farbe:KACHELFARBEN[i%KACHELFARBEN.length]}; i++; });
+  return {
+    groesse:"auto",
+    routen:routen,
+    gaeste:{ erwachsene:{farbe:KACHELFARBEN[i%KACHELFARBEN.length]},
+             kinder:{farbe:KACHELFARBEN[(i+1)%KACHELFARBEN.length]} },
+  };
+}
+
+/* Welche Schrift auf einer Fläche lesbar ist, hängt an ihrer Helligkeit
+   (WCAG-Kontrastformel) — reicht, um bei jeder Kachelfarbe automatisch
+   zwischen heller und dunkler Schrift zu wählen. */
+function helligkeit(hex){
+  var m=/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex||"");
+  if(!m) return 0;
+  function anteil(h){ var c=parseInt(h,16)/255; return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055,2.4); }
+  return 0.2126*anteil(m[1])+0.7152*anteil(m[2])+0.0722*anteil(m[3]);
+}
+function abstand(a,b){ var h=helligkeit(a), d=helligkeit(b); return (Math.max(h,d)+0.05)/(Math.min(h,d)+0.05); }
+function schriftAuf(hex){ return abstand(hex,"#0B2436")>=abstand(hex,"#ffffff") ? "#0B2436" : "#ffffff"; }
+
 function leereDaten(){
   return {
     reederei:{name:"Reederei", zusatz:""},
@@ -713,6 +764,7 @@ function leereDaten(){
       zusatz:{fahrrad:3,hund:3,bollerwagen:2},
       pkwStufen:[{id:1,bis:4.0,preis:25},{id:2,bis:4.5,preis:30},{id:3,bis:5.0,preis:35},{id:4,bis:null,preis:45}],
       lkw:{preis:60},
+      kacheln:defaultKacheln(),
     },
     tickets:[],
     naechsteNummer:1,
@@ -736,6 +788,9 @@ function laden(){
   var roh=null;
   try{ roh=localStorage.getItem(KEY); }catch(e){ nurImSpeicher=true; }
   if(roh){ try{ db=Object.assign(leereDaten(),JSON.parse(roh)); }catch(e){ db=leereDaten(); } }
+  /* Object.assign ersetzt "preise" als Ganzes; ein älterer Stand ohne
+     Kachel-Einstellungen bekäme sonst keine. */
+  if(!db.preise.kacheln) db.preise.kacheln=defaultKacheln();
 }
 function sichern(){
   try{ localStorage.setItem(KEY,JSON.stringify(db)); }
@@ -815,7 +870,52 @@ function korbLeer(){
          korb.hunde===0 && korb.bollerwagen===0 && korb.pkw.length===0 && korb.lkw===0;
 }
 
+function zeichneRoutenKacheln(){
+  var box=$("routenKacheln"); box.innerHTML="";
+  VERBINDUNGEN.forEach(function(v){
+    var k=db.preise.kacheln.routen[v.code] || {farbe:"#0E6BA8"};
+    var b=document.createElement("button");
+    b.type="button"; b.className="kachel"+(korb.verbindung===v.code?" aktiv":"");
+    b.style.background=k.farbe; b.style.color=schriftAuf(k.farbe);
+    b.style.border = helligkeit(k.farbe)>0.5 ? "1px solid rgba(11,36,54,.18)" : "0";
+    b.innerHTML='<span class="bez">'+esc(HAFEN_NAME[v.von])+' → '+esc(HAFEN_NAME[v.nach])+'</span>';
+    b.addEventListener("click",function(){ korb.verbindung=v.code; zeichneVerkauf(); });
+    box.appendChild(b);
+  });
+}
+
+function zeichneGastKacheln(){
+  var box=$("gastKacheln"); box.innerHTML="";
+  [["erwachsene","Erwachsene"],["kinder","Kinder"]].forEach(function(paar){
+    var feld=paar[0], label=paar[1];
+    var k=db.preise.kacheln.gaeste[feld] || {farbe:"#0E6BA8"};
+    var q=korb[feld]||0;
+    var b=document.createElement("button");
+    b.type="button"; b.className="kachel";
+    b.style.background=k.farbe; b.style.color=schriftAuf(k.farbe);
+    b.style.border = helligkeit(k.farbe)>0.5 ? "1px solid rgba(11,36,54,.18)" : "0";
+    b.innerHTML='<span class="bez">'+esc(label)+'</span>'+
+      (q ? '<span class="zahl">'+q+'</span><span class="weniger" data-weniger="'+feld+'">−</span>' : '');
+    b.addEventListener("click",function(e){
+      var w=e.target.getAttribute && e.target.getAttribute("data-weniger");
+      if(w) korb[w]=Math.max(0,korb[w]-1);
+      else korb[feld]=Math.min(20,korb[feld]+1);
+      zeichneVerkauf();
+    });
+    box.appendChild(b);
+  });
+}
+
+function anwendenKachelgroesse(){
+  var g=db.preise.kacheln.groesse;
+  if(g==="auto") document.documentElement.style.removeProperty("--kachelbreite");
+  else document.documentElement.style.setProperty("--kachelbreite", g+"px");
+}
+
 function zeichneVerkauf(){
+  anwendenKachelgroesse();
+  zeichneRoutenKacheln();
+  zeichneGastKacheln();
   $("vSumme").textContent=eur(warenkorbPreis().summe);
   var r=warenkorbPreis();
   var tb=$("tabWarenkorb").querySelector("tbody");
@@ -832,7 +932,7 @@ function zeichneVerkauf(){
   }).join("");
   $("pkwLeer").classList.toggle("hide", korb.pkw.length>0);
 
-  ["erwachsene","kinder","fahrraeder","hunde","bollerwagen","lkw"].forEach(function(f){
+  ["fahrraeder","hunde","bollerwagen","lkw"].forEach(function(f){
     var el=document.querySelector('.mengenfeld[data-feld="'+f+'"] .zahl');
     if(el) el.textContent=korb[f];
   });
@@ -854,7 +954,6 @@ function fuelleVerbindungSelects(){
   var opts=VERBINDUNGEN.map(function(v){
     return '<option value="'+v.code+'">'+HAFEN_NAME[v.von]+' → '+HAFEN_NAME[v.nach]+'</option>';
   }).join("");
-  $("vVerbindung").innerHTML=opts;
   $("bkVerbindung").innerHTML=opts;
 }
 
@@ -1101,6 +1200,23 @@ function zeichneEinstellungen(){
       "<td class='re'><input type='number' step='0.5' min='0' value='"+s.preis+"' data-pkwstufe='"+s.id+"' data-pkwfeld='preis' style='width:90px;text-align:right;height:26px'></td>"+
       "<td><button type='button' class='rund klein' data-pkwstufeloeschen='"+s.id+"'>✕</button></td></tr>";
   }).join("");
+
+  var kg=db.preise.kacheln.groesse;
+  $("eKachelGroesse").value = ["auto","110","140","180","240"].indexOf(String(kg))>=0 ? String(kg) : "auto";
+
+  $("eRoutenFarben").innerHTML=VERBINDUNGEN.map(function(v){
+    var farbe=(db.preise.kacheln.routen[v.code]||{}).farbe||"#0E6BA8";
+    return "<label style='display:flex;align-items:center;gap:8px;font-size:13px'>"+
+      "<input type='color' value='"+farbe+"' data-routenfarbe='"+v.code+"' style='width:36px;height:26px;padding:0;border:1px solid var(--linie);border-radius:4px'>"+
+      esc(HAFEN_NAME[v.von])+" → "+esc(HAFEN_NAME[v.nach])+"</label>";
+  }).join("");
+
+  $("eGastFarben").innerHTML=[["erwachsene","Erwachsene"],["kinder","Kinder"]].map(function(p){
+    var farbe=(db.preise.kacheln.gaeste[p[0]]||{}).farbe||"#0E6BA8";
+    return "<label style='display:flex;align-items:center;gap:8px;font-size:13px'>"+
+      "<input type='color' value='"+farbe+"' data-gastfarbe='"+p[0]+"' style='width:36px;height:26px;padding:0;border:1px solid var(--linie);border-radius:4px'>"+
+      esc(p[1])+"</label>";
+  }).join("");
 }
 
 function exportieren(){
@@ -1119,6 +1235,7 @@ function importieren(datei){
     try{
       var neu=JSON.parse(r.result);
       db=Object.assign(leereDaten(),neu);
+      if(!db.preise.kacheln) db.preise.kacheln=defaultKacheln();
       sichern();
       allesZeichnen();
       melden("Sicherung eingespielt.","gut");
@@ -1160,7 +1277,6 @@ function start(){
     b.addEventListener("click",function(){ reiterZeigen(b.getAttribute("data-reiter")); });
   });
 
-  $("vVerbindung").addEventListener("change",function(){ korb.verbindung=this.value; zeichneVerkauf(); });
   $("vFahrttyp").addEventListener("change",function(){ korb.fahrttyp=this.value; zeichneVerkauf(); });
 
   document.querySelectorAll('.mengenfeld[data-feld] button[data-delta]').forEach(function(btn){
@@ -1242,6 +1358,21 @@ function start(){
     db.preise.pkwStufen=db.preise.pkwStufen.filter(function(x){ return String(x.id)!==id; });
     sichern(); zeichneEinstellungen();
   });
+
+  $("eKachelGroesse").addEventListener("change",function(){
+    db.preise.kacheln.groesse=this.value; sichern(); anwendenKachelgroesse();
+  });
+  $("eRoutenFarben").addEventListener("input",function(e){
+    var code=e.target.getAttribute("data-routenfarbe");
+    if(!code) return;
+    db.preise.kacheln.routen[code].farbe=e.target.value; sichern();
+  });
+  $("eGastFarben").addEventListener("input",function(e){
+    var feld=e.target.getAttribute("data-gastfarbe");
+    if(!feld) return;
+    db.preise.kacheln.gaeste[feld].farbe=e.target.value; sichern();
+  });
+
   $("btnNeuerSchluessel").addEventListener("click",function(){
     if(!confirm("Neuen Schlüssel erzeugen? Alle bisher gedruckten Fahrkarten werden dadurch ungültig.")) return;
     db.schluessel=zufallsSchluessel(); sichern(); zeichneEinstellungen();
