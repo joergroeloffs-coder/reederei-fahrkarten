@@ -65,7 +65,7 @@ header nav button[aria-current=true]{background:rgba(255,255,255,.08);
   border-color:var(--kopfRand);color:#fff}
 header .vers{color:var(--kopfWeich);font-size:12px}
 
-main{padding:16px;max-width:1200px;margin:0 auto}
+main{padding:16px;max-width:1440px;margin:0 auto}
 .hide{display:none!important}
 
 .karte{background:var(--flaeche);border:1px solid var(--linieFein);border-radius:var(--radius);
@@ -82,6 +82,16 @@ main{padding:16px;max-width:1200px;margin:0 auto}
 @media(max-width:720px){.r2,.r3,.r4{grid-template-columns:1fr}}
 .zweispaltig{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
 @media(max-width:900px){.zweispaltig{grid-template-columns:1fr}}
+
+/* --------------------------- Verkauf: in die Breite --------------------------- */
+.verkaufraster{display:grid;grid-template-columns:2.4fr 1fr;gap:16px;align-items:start}
+.verkaufhaupt .karte{margin-bottom:12px}
+@media(max-width:980px){.verkaufraster{grid-template-columns:1fr}}
+.zeile-breit{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.hafenkarte-spalte{flex:2 1 420px;min-width:280px}
+.kachelraster-spalte{flex:1 1 130px;max-width:150px;grid-template-columns:1fr!important;align-content:start}
+.unterspalte{flex:1 1 240px;min-width:220px}
+.unterkopf{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--tinteWeich);margin:0 0 8px}
 
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;font-weight:400;font-size:11px;text-transform:uppercase;letter-spacing:.07em;
@@ -113,12 +123,18 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 .kachel.aktiv{outline:3px solid var(--tinte);outline-offset:2px}
 
 /* --------------------------- Hafenkarte (Verkauf) --------------------------- */
-.hafenkarte{position:relative;width:100%;aspect-ratio:16/10;background:#CFE6F2;
+.hafenkarte{position:relative;width:100%;aspect-ratio:16/8;background:#CFE6F2;
   border-radius:10px;overflow:hidden;border:1px solid var(--linieFein)}
 .land{position:absolute;background:#DCEEDC;border:1px solid #BFDDBF}
-.land-festland{left:-4%;top:12%;width:36%;height:64%;border-radius:30% 70% 60% 40%/40% 50% 50% 60%}
-.land-foehr{left:42%;top:0%;width:46%;height:50%;border-radius:60% 40% 50% 50%/50% 60% 40% 50%}
-.land-amrum{left:46%;top:54%;width:48%;height:46%;border-radius:45% 55% 40% 60%/55% 45% 60% 40%}
+/* Schematisch, aber in echter Lage: Amrum liegt seeseits im Südwesten,
+   Föhr in der Mitte, das Festland mit Dagebüll im Nordosten — genau wie
+   auf der richtigen Karte, nur vereinfacht gezeichnet. Ein echtes
+   Kartenbild einzubetten würde Netzzugriff beim Laden brauchen (oder
+   Bildrechte kosten); diese Datei bleibt bewusst eine einzige Seite ohne
+   Nachladen. */
+.land-festland{left:74%;top:-10%;width:40%;height:66%;border-radius:35% 65% 55% 45%/30% 45% 55% 70%}
+.land-foehr{left:36%;top:6%;width:38%;height:56%;border-radius:55% 45% 50% 50%/50% 55% 45% 50%}
+.land-amrum{left:-6%;top:38%;width:26%;height:68%;border-radius:60% 40% 55% 45%/25% 25% 75% 75%}
 .routenlinie{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .hafen{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;
   align-items:center;gap:2px;background:none;border:0;cursor:pointer;color:var(--tinte);padding:2px}
@@ -177,57 +193,55 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
 
 <!-- ============================ Verkauf ============================ -->
 <section id="reiter-verkauf">
-  <div class="zweispaltig">
-    <div>
+  <div class="verkaufraster">
+    <div class="verkaufhaupt">
       <div class="karte">
         <div class="kopf"><h3>Strecke</h3></div>
-        <div class="inhalt">
-          <div id="hafenkarte" class="hafenkarte">
-            <div class="land land-festland"></div>
-            <div class="land land-foehr"></div>
-            <div class="land land-amrum"></div>
-            <svg id="routenLinie" class="routenlinie" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-            <button type="button" class="hafen" data-hafen="D" style="left:15%;top:50%">
-              <span class="anker">⚓</span><span class="bez">Dagebüll</span></button>
-            <button type="button" class="hafen" data-hafen="W" style="left:65%;top:23%">
-              <span class="anker">⚓</span><span class="bez">Wyk (Föhr)</span></button>
-            <button type="button" class="hafen" data-hafen="T" style="left:70%;top:78%">
-              <span class="anker">⚓</span><span class="bez">Wittdün (Amrum)</span></button>
+        <div class="inhalt zeile-breit">
+          <div class="hafenkarte-spalte">
+            <div id="hafenkarte" class="hafenkarte">
+              <div class="land land-amrum"></div>
+              <div class="land land-foehr"></div>
+              <div class="land land-festland"></div>
+              <svg id="routenLinie" class="routenlinie" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              <button type="button" class="hafen" data-hafen="T" style="left:11%;top:82%">
+                <span class="anker">⚓</span><span class="bez">Wittdün (Amrum)</span></button>
+              <button type="button" class="hafen" data-hafen="W" style="left:58%;top:40%">
+                <span class="anker">⚓</span><span class="bez">Wyk (Föhr)</span></button>
+              <button type="button" class="hafen" data-hafen="D" style="left:92%;top:15%">
+                <span class="anker">⚓</span><span class="bez">Dagebüll</span></button>
+            </div>
+            <div id="routenText" class="muted" style="margin-top:6px;font-size:13px"></div>
           </div>
-          <div id="routenText" class="muted" style="margin-top:8px;font-size:13px"></div>
-
-          <div id="fahrttypKacheln" class="kachelraster" style="grid-template-columns:repeat(2,minmax(110px,140px));margin-top:12px"></div>
+          <div id="fahrttypKacheln" class="kachelraster kachelraster-spalte"></div>
         </div>
       </div>
 
       <div class="karte">
-        <div class="kopf"><h3>Personen</h3></div>
-        <div class="inhalt">
-          <div id="gastKacheln" class="kachelraster"></div>
-        </div>
-      </div>
-
-      <div class="karte">
-        <div class="kopf"><h3>Zusatzkarten</h3></div>
-        <div class="inhalt">
-          <div id="zusatzKacheln" class="kachelraster"></div>
-        </div>
-      </div>
-
-      <div class="karte">
-        <div class="kopf"><h3>Fahrzeuge</h3></div>
-        <div class="inhalt">
-          <div id="fahrzeugKacheln" class="kachelraster"></div>
-          <table id="tabPkw" style="margin-top:12px">
-            <thead><tr><th>Pkw</th><th class="re" style="width:140px">Länge in Metern</th><th style="width:40px"></th></tr></thead>
-            <tbody></tbody>
-          </table>
-          <div id="pkwLeer" class="leer">Kein Pkw im Warenkorb.</div>
+        <div class="kopf"><h3>Personen, Zusatzkarten &amp; Fahrzeuge</h3></div>
+        <div class="inhalt zeile-breit">
+          <div class="unterspalte">
+            <h4 class="unterkopf">Personen</h4>
+            <div id="gastKacheln" class="kachelraster"></div>
+          </div>
+          <div class="unterspalte">
+            <h4 class="unterkopf">Zusatzkarten</h4>
+            <div id="zusatzKacheln" class="kachelraster"></div>
+          </div>
+          <div class="unterspalte" style="flex-basis:260px">
+            <h4 class="unterkopf">Fahrzeuge</h4>
+            <div id="fahrzeugKacheln" class="kachelraster"></div>
+            <table id="tabPkw" style="margin-top:10px">
+              <thead><tr><th>Pkw</th><th class="re" style="width:120px">Länge (m)</th><th style="width:36px"></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div id="pkwLeer" class="leer" style="padding:10px 0">Kein Pkw im Warenkorb.</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <div>
+    <div class="verkaufseite">
       <div class="karte">
         <div class="kopf"><h3>Warenkorb</h3></div>
         <div class="inhalt">
@@ -244,7 +258,7 @@ td{padding:6px 6px 6px 0;border-bottom:1px solid var(--linieFein)}
       <div class="karte">
         <div class="kopf"><h3 id="heuteTitel">Heute verkauft</h3></div>
         <div class="inhalt">
-          <div id="heuteListe" style="max-height:260px;overflow:auto"></div>
+          <div id="heuteListe" style="max-height:220px;overflow:auto"></div>
         </div>
       </div>
     </div>
@@ -880,7 +894,7 @@ var SYMBOL={
   lkw:'<svg viewBox="0 0 36 20"><rect x="2" y="3.5" width="18" height="10.5" fill="currentColor"/><path d="M20 8 L28 8 L33 12.5 L33 14 L20 14 Z" fill="currentColor"/><circle cx="8" cy="16.5" r="2.7" fill="#fff"/><circle cx="27.5" cy="16.5" r="2.7" fill="#fff"/></svg>',
 };
 
-var HAFEN_POS={ D:{x:15,y:50}, W:{x:65,y:23}, T:{x:70,y:78} };
+var HAFEN_POS={ D:{x:92,y:15}, W:{x:58,y:40}, T:{x:11,y:82} };
 var kartenVon=null;
 
 function kachelInhalt(symbol, label, anzahl, wenigerFeld){
