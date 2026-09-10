@@ -729,6 +729,30 @@ function gegenrichtung(code){ return code[1]+code[0]; }
 function basisStrecke(code){ var a=code[0],b=code[1]; return a<b?a+b:b+a; }
 var BASISSTRECKEN=["DT","DW","TW"];
 
+/* Das Schiff fährt Dagebüll–Amrum nie durch, sondern legt immer erst in
+   Wyk an. Eine Karte für diese Strecke gilt deshalb für zwei echte
+   Teilstrecken — und, weil sich die Fahrt in Wyk unterbrechen lässt (ein
+   Tag dort bleiben und mit derselben Karte weiterfahren), müssen beide
+   getrennt voneinander eingelöst werden können. */
+function etappenFuer(code){
+  if(code==="DT") return ["DW","WT"];
+  if(code==="TD") return ["TW","WD"];
+  return [code];
+}
+function legStatusNeu(routeCode, retoure){
+  var status={};
+  etappenFuer(routeCode).forEach(function(e){ status[e]="offen"; });
+  if(retoure) etappenFuer(gegenrichtung(routeCode)).forEach(function(e){ status[e]="offen"; });
+  return status;
+}
+function etappenLabel(code){
+  var v=verbindung(code);
+  return HAFEN_NAME[v.von]+" → "+HAFEN_NAME[v.nach];
+}
+/* Nur die Strecken, die das Schiff tatsächlich fährt — an der Bordkontrolle
+   wird je Anlegestelle geprüft, nicht je verkaufter Fahrkartenstrecke. */
+var DIREKTE_VERBINDUNGEN=["DW","WD","WT","TW"];
+
 /* Erdige, gut unterscheidbare Farben in Blau-/Grüntönen — dieselbe Idee wie
    im Ticketmanager (dort Grün/Messing/Ziegel), hier in Reederei-Blau. */
 var KACHELFARBEN=["#0E6BA8","#1E7A4C","#5B8AA6","#C24914","#0B2436","#9FB8C8","#B23A2E","#E1EEF5"];
@@ -913,13 +937,19 @@ function zeichneHafenkarte(){
   });
   var svg=$("routenLinie");
   if(korb.verbindung){
-    var v=verbindung(korb.verbindung), p1=HAFEN_POS[v.von], p2=HAFEN_POS[v.nach];
+    var v=verbindung(korb.verbindung);
+    var etappen=etappenFuer(korb.verbindung);
     var farbe=(db.preise.kacheln.routen[korb.verbindung]||{}).farbe||"#0E6BA8";
+    /* Fährt das Schiff über Wyk, knickt auch die Linie dort ab — so
+       zeigt die Karte selbst, dass es kein direkter Kurs ist. */
+    var punkte=[HAFEN_POS[verbindung(etappen[0]).von]];
+    etappen.forEach(function(e){ punkte.push(HAFEN_POS[verbindung(e).nach]); });
+    var pfad=punkte.map(function(p,i){ return (i===0?"M":"L")+p.x+","+p.y; }).join(" ");
     svg.innerHTML='<defs><marker id="pfeilspitze" markerWidth="6" markerHeight="6" refX="4.5" refY="2.5" orient="auto">'+
       '<path d="M0,0 L5,2.5 L0,5 z" fill="'+farbe+'"/></marker></defs>'+
-      '<line x1="'+p1.x+'" y1="'+p1.y+'" x2="'+p2.x+'" y2="'+p2.y+'" stroke="'+farbe+
-      '" stroke-width="1" marker-end="url(#pfeilspitze)"/>';
-    $("routenText").textContent=HAFEN_NAME[v.von]+" → "+HAFEN_NAME[v.nach];
+      '<path d="'+pfad+'" stroke="'+farbe+'" stroke-width="1" fill="none" marker-end="url(#pfeilspitze)"/>';
+    $("routenText").textContent=HAFEN_NAME[v.von]+" → "+HAFEN_NAME[v.nach]+
+      (etappen.length>1 ? " (über "+HAFEN_NAME[verbindung(etappen[0]).nach]+")" : "");
   } else {
     svg.innerHTML="";
     $("routenText").textContent=kartenVon
@@ -1046,10 +1076,12 @@ function zeichneVerkauf(){
 }
 
 function fuelleVerbindungSelects(){
-  var opts=VERBINDUNGEN.map(function(v){
-    return '<option value="'+v.code+'">'+HAFEN_NAME[v.von]+' → '+HAFEN_NAME[v.nach]+'</option>';
+  /* An der Bordkontrolle wird je Anlegestelle geprüft — das Schiff
+     fährt nie direkt Dagebüll–Amrum durch, sondern immer über Wyk. */
+  $("bkVerbindung").innerHTML=DIREKTE_VERBINDUNGEN.map(function(code){
+    var v=verbindung(code);
+    return '<option value="'+code+'">'+HAFEN_NAME[v.von]+' → '+HAFEN_NAME[v.nach]+'</option>';
   }).join("");
-  $("bkVerbindung").innerHTML=opts;
 }
 
 function naechsteTicketNummer(){
@@ -1071,7 +1103,7 @@ function verkaufen(){
     fahrttyp: korb.fahrttyp,
     posten:r.posten, summe:r.summe,
     datum:heuteIso(), erstellt:Date.now(),
-    legStatus: korb.fahrttyp==="hinrueck" ? {hin:"offen",rueck:"offen"} : {hin:"offen"},
+    legStatus: legStatusNeu(korb.verbindung, korb.fahrttyp==="hinrueck"),
     storniert:false,
   };
   db.tickets.push(t);
@@ -1086,11 +1118,14 @@ function verkaufen(){
 
 function drucken(t){
   var v=verbindung(t.routeCode);
+  var etappen=etappenFuer(t.routeCode);
+  var ueber=etappen.length>1 ? " (über "+esc(HAFEN_NAME[verbindung(etappen[0]).nach])+")" : "";
   var reederei=db.reederei||{};
   var html='<article class="ticket">'+
     '<div class="qr">'+qrSvg(ticketCode(t))+'</div>'+
     '<div class="reederei">'+esc(reederei.name||"")+(reederei.zusatz?'<div style="font-weight:400;font-size:9pt">'+esc(reederei.zusatz)+'</div>':'')+'</div>'+
-    '<div class="strecke">'+esc(HAFEN_NAME[v.von])+' → '+esc(HAFEN_NAME[v.nach])+'</div>'+
+    '<div class="strecke">'+esc(HAFEN_NAME[v.von])+' → '+esc(HAFEN_NAME[v.nach])+ueber+'</div>'+
+    (etappen.length>1 ? '<div style="font-size:9pt;color:#555">Die Fahrt darf in '+esc(HAFEN_NAME[verbindung(etappen[0]).nach])+' unterbrochen werden — dieselbe Karte gilt auch für die Weiterfahrt.</div>' : '')+
     '<div>'+(t.fahrttyp==="hinrueck"?"Hin- und Rückfahrt":"Einfache Fahrt")+'</div>'+
     '<table>'+t.posten.map(function(p){
       return '<tr><td>'+esc(p.bez)+(p.anzahl>1?' × '+p.anzahl:'')+'</td><td style="text-align:right">'+eur(p.summe)+' EUR</td></tr>';
@@ -1106,18 +1141,12 @@ window.addEventListener("afterprint",function(){ $("bogen").innerHTML=""; });
 /* ============================== Fahrkarten ============================== */
 function statusText(t){
   if(t.storniert) return {text:"Storniert",farbe:"var(--ziegel)",bg:"var(--ziegelHell)"};
-  if(t.retoure){
-    if(t.legStatus.hin==="offen"||t.legStatus.rueck==="offen"){
-      var teile=[];
-      teile.push("Hin "+(t.legStatus.hin==="eingeloest"?"eingelöst":"offen"));
-      teile.push("Rück "+(t.legStatus.rueck==="eingeloest"?"eingelöst":"offen"));
-      return {text:teile.join(" · "),farbe:"var(--tinte)",bg:"var(--seeHell)"};
-    }
-    return {text:"Beide Fahrten eingelöst",farbe:"var(--gruen)",bg:"var(--gruenHell)"};
-  }
-  return t.legStatus.hin==="eingeloest"
-    ? {text:"Eingelöst",farbe:"var(--gruen)",bg:"var(--gruenHell)"}
-    : {text:"Offen",farbe:"var(--tinteWeich)",bg:"var(--grund)"};
+  var keys=Object.keys(t.legStatus);
+  var eingeloest=keys.filter(function(k){ return t.legStatus[k]==="eingeloest"; });
+  if(eingeloest.length===0) return {text:"Offen",farbe:"var(--tinteWeich)",bg:"var(--grund)"};
+  if(eingeloest.length===keys.length)
+    return {text: keys.length>1 ? "Alle Etappen eingelöst" : "Eingelöst", farbe:"var(--gruen)",bg:"var(--gruenHell)"};
+  return {text: eingeloest.length+"/"+keys.length+" Etappen eingelöst", farbe:"var(--tinte)",bg:"var(--seeHell)"};
 }
 
 function zeichneFahrkarten(){
@@ -1170,31 +1199,29 @@ function pruefe(rohtext){
   if(!t){ befund("b-nein","Nicht gefunden","Diese Fahrkarte ist auf diesem Gerät nicht gespeichert."); return; }
   if(t.storniert){ befund("b-nein","Storniert",ticketCode(t)); return; }
 
-  var welchesBein=null;
-  if(aktiv===t.routeCode) welchesBein="hin";
-  else if(t.retoure && aktiv===gegenrichtung(t.routeCode)) welchesBein="rueck";
-
-  if(!welchesBein){
-    var v=verbindung(t.routeCode);
+  /* Geprüft wird gegen die tatsächlich gefahrene Teilstrecke. Eine Karte
+     für Dagebüll–Wittdün deckt zwei echte Etappen ab (über Wyk) — welche
+     davon gerade dran ist, sagt aktiv, nicht die auf der Karte gedruckte
+     Gesamtstrecke. */
+  if(!(aktiv in t.legStatus)){
     befund("b-nein","Falsche Verbindung",
-      "Diese Karte gilt für "+HAFEN_NAME[v.von]+" → "+HAFEN_NAME[v.nach]+
-      (t.retoure?" (und zurück)":"")+".");
+      "Diese Karte gilt für "+etappenLabel(t.routeCode)+
+      (Object.keys(t.legStatus).length>1?" (über Wyk)":"")+
+      (t.retoure?" und zurück":"")+".");
     return;
   }
-  if(t.legStatus[welchesBein]==="eingeloest"){
-    befund("b-nein","Bereits eingelöst",
-      welchesBein==="hin"?"Hinfahrt bereits an Bord genommen.":"Rückfahrt bereits an Bord genommen.");
+  if(t.legStatus[aktiv]==="eingeloest"){
+    befund("b-nein","Bereits eingelöst", etappenLabel(aktiv)+" bereits an Bord genommen.");
     return;
   }
 
-  t.legStatus[welchesBein]="eingeloest";
+  t.legStatus[aktiv]="eingeloest";
   sichern();
   var zusatz=t.posten.map(function(p){ return p.bez+(p.anzahl>1?" × "+p.anzahl:""); }).join(", ");
-  var rest = t.retoure
-    ? (welchesBein==="hin"
-        ? (t.legStatus.rueck==="offen" ? "Rückfahrt noch offen." : "Rückfahrt bereits genommen.")
-        : "Hinfahrt war bereits genommen.")
-    : "";
+  var offenNoch=Object.keys(t.legStatus).filter(function(k){ return t.legStatus[k]==="offen"; });
+  var rest = offenNoch.length
+    ? "Noch offen: "+offenNoch.map(etappenLabel).join(", ")+"."
+    : (Object.keys(t.legStatus).length>1 ? "Alle Etappen eingelöst." : "");
   befund("b-ja","Gültig",zusatz+(rest?" · "+rest:""));
   zeichneFahrkarten();
 }
